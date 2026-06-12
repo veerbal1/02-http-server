@@ -174,3 +174,20 @@ func TestTasksHandlerMethodNotAllowed(t *testing.T) {
 		t.Errorf("expected body %q, got %q", expected, rr.Body.String())
 	}
 }
+
+func TestRequestIDMiddlewareAddsHeader(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rr := httptest.NewRecorder()
+
+	wrapped := requestIDMiddleware(healthHandler)
+	wrapped(rr, req)
+
+	reqID := rr.Header().Get("X-Request-ID")
+	if reqID != "req-1" {
+		t.Errorf("expected X-Request-ID %q, got %q", "req-1", reqID)
+	}
+
+	if rr.Body.String() != "ok" {
+		t.Errorf("expected body %q, got %q", "ok", rr.Body.String())
+	}
+}

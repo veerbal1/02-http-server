@@ -29,6 +29,13 @@ func writeJSON(w http.ResponseWriter, status int, data any) error {
 	return json.NewEncoder(w).Encode(data)
 }
 
+func requestIDMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Request-ID", "req-1")
+		next(w, r)
+	}
+}
+
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
@@ -79,8 +86,8 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/tasks", createTaskHandler)
+	http.HandleFunc("/health", requestIDMiddleware(healthHandler))
+	http.HandleFunc("/tasks", requestIDMiddleware(createTaskHandler))
 
 	err := http.ListenAndServe(":8080", nil)
 
