@@ -1,5 +1,9 @@
 # Stage 02 - HTTP Server
 
+## Status
+
+Implementation complete. Final completion review is pending the explain-back checkpoint.
+
 ## Goal
 
 Build a small in-memory task API in Go and understand the HTTP request lifecycle.
@@ -40,7 +44,7 @@ request -> middleware -> handler -> response
 6. Add request ID middleware. - Done
 7. Add logging middleware. - Done
 8. Add panic recovery middleware. - Done
-9. Add graceful shutdown.
+9. Add graceful shutdown. - Done
 10. Add handler tests.
 
 ## Current Progress
@@ -61,7 +65,15 @@ Working now:
 - Request IDs are generated as `req-<number>` and protected with a mutex.
 - Requests are logged with request ID, method, path, and duration.
 - Panic recovery returns `500 Internal Server Error` with a safe JSON error body and logs panic details.
+- Graceful shutdown listens for `Ctrl+C`/`SIGTERM` and shuts down with a 5 second timeout.
 - In-memory task creation and listing are protected with a mutex and list snapshot.
+
+Completion review:
+
+- Automated tests pass.
+- Manual curl checklist passed.
+- README documents current behavior.
+- Remaining checkpoint: explain the request flow, middleware chain, testing approach, in-memory limitation, and graceful shutdown in your own words.
 
 Current request flow:
 
@@ -92,9 +104,10 @@ Important limitation:
 - [x] Request IDs appear in responses.
 - [x] Logs show useful request information.
 - [x] Panic recovery returns a controlled response.
-- [ ] Graceful shutdown is implemented.
+- [x] Graceful shutdown is implemented.
 - [x] Handler tests pass.
 - [x] README explains current request flow and endpoints.
+- [ ] User can explain the project flow in their own words.
 
 ## Endpoints
 
@@ -166,6 +179,19 @@ curl -i -X POST http://localhost:8080/tasks -d '{bad json}'
 curl -i -X DELETE http://localhost:8080/tasks
 ```
 
+Graceful shutdown check:
+
+```bash
+go run .
+# press Ctrl+C
+```
+
+Expected:
+
+```text
+shutting down
+```
+
 ## Current Manual Checks
 
 ```bash
@@ -223,7 +249,18 @@ Manual curl checklist passed:
 - Logging middleware measures duration around the handler and logs `request_id`, method, path, and duration.
 - Recovery middleware uses `defer` and `recover` to catch panics and return a controlled `500` response.
 - Middleware order matters: request ID runs first, recovery wraps logging and handlers, and logging wraps the route handler.
+- Graceful shutdown uses an explicit `http.Server`, listens for stop signals, and calls `Shutdown` with a timeout context.
 - In-memory storage disappears when the server restarts.
+
+## Completion Explain-Back
+
+Before moving to the next stage, explain:
+
+1. What happens when a request hits `/tasks`.
+2. What the middleware layers do.
+3. Why `httptest` is useful.
+4. Why in-memory storage disappears after restart.
+5. What graceful shutdown does.
 
 ## Public Post Ideas
 
