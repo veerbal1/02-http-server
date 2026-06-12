@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -130,9 +134,27 @@ func main() {
 	http.HandleFunc("/health", requestIDMiddleware(recoveryMiddleware(loggingMiddleware(healthHandler))))
 	http.HandleFunc("/tasks", requestIDMiddleware(recoveryMiddleware(loggingMiddleware(createTaskHandler))))
 
-	err := http.ListenAndServe(":8080", nil)
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
-	if err != nil {
-		fmt.Println("Got error: ", err)
+	server := &http.Server{
+		Addr: ":8080",
+	}
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			fmt.Println("server error:", err)
+		}
+	}()
+
+	<-stop
+	fmt.Println("shutting down")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		fmt.Println("shutdown error:", err)
 	}
 }
