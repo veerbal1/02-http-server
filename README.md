@@ -39,7 +39,7 @@ request -> middleware -> handler -> response
 5. Add JSON validation and useful error responses. - Done for current create/list slice
 6. Add request ID middleware. - Done
 7. Add logging middleware. - Done
-8. Add panic recovery middleware.
+8. Add panic recovery middleware. - Done
 9. Add graceful shutdown.
 10. Add handler tests.
 
@@ -60,12 +60,13 @@ Working now:
 - `GET /health` and `/tasks` responses include `X-Request-ID`.
 - Request IDs are generated as `req-<number>` and protected with a mutex.
 - Requests are logged with request ID, method, path, and duration.
+- Panic recovery returns `500 Internal Server Error` with a safe JSON error body and logs panic details.
 - In-memory task creation and listing are protected with a mutex and list snapshot.
 
 Current request flow:
 
 ```text
-client request -> request ID middleware -> logging middleware -> route handler -> method check -> decode JSON -> validate -> create/list -> response
+client request -> request ID middleware -> recovery middleware -> logging middleware -> route handler -> method check -> decode JSON -> validate -> create/list -> response
 ```
 
 Important limitation:
@@ -90,7 +91,7 @@ Important limitation:
 - [x] Invalid JSON returns a useful error.
 - [x] Request IDs appear in responses.
 - [x] Logs show useful request information.
-- [ ] Panic recovery returns a controlled response.
+- [x] Panic recovery returns a controlled response.
 - [ ] Graceful shutdown is implemented.
 - [x] Handler tests pass.
 - [x] README explains current request flow and endpoints.
@@ -189,6 +190,7 @@ Automated tests:
 - `TestTasksHandlerMethodNotAllowed` checks unsupported methods return `405`, `Allow: GET, POST`, and JSON error.
 - `TestRequestIDMiddlewareAddsHeader` checks middleware adds `X-Request-ID` and still calls the wrapped handler.
 - `TestRequestIDMiddlewareGeneratesDifferentIDs` checks sequential requests receive `req-1` and `req-2`.
+- `TestRecoveryMiddlewareHandlesPanic` checks a panic becomes `500 Internal Server Error` with a safe JSON error.
 
 Manual curl checklist passed:
 
@@ -219,6 +221,8 @@ Manual curl checklist passed:
 - A mutex protects shared data so one request updates a shared counter or task list at a time.
 - For `GET /tasks`, copying the slice under lock gives the response a stable snapshot before JSON encoding.
 - Logging middleware measures duration around the handler and logs `request_id`, method, path, and duration.
+- Recovery middleware uses `defer` and `recover` to catch panics and return a controlled `500` response.
+- Middleware order matters: request ID runs first, recovery wraps logging and handlers, and logging wraps the route handler.
 - In-memory storage disappears when the server restarts.
 
 ## Public Post Ideas

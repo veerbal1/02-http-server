@@ -61,6 +61,8 @@ func recoveryMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
+				requestID := w.Header().Get("X-Request-ID")
+				fmt.Printf("request_id=%s method=%s path=%s panic=%v\n", requestID, r.Method, r.URL.Path, err)
 				writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "internal server error"})
 			}
 		}()
@@ -125,8 +127,8 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/health", requestIDMiddleware(loggingMiddleware(healthHandler)))
-	http.HandleFunc("/tasks", requestIDMiddleware(loggingMiddleware(createTaskHandler)))
+	http.HandleFunc("/health", requestIDMiddleware(recoveryMiddleware(loggingMiddleware(healthHandler))))
+	http.HandleFunc("/tasks", requestIDMiddleware(recoveryMiddleware(loggingMiddleware(createTaskHandler))))
 
 	err := http.ListenAndServe(":8080", nil)
 

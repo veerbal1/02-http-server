@@ -215,3 +215,24 @@ func TestRequestIDMiddlewareGeneratesDifferentIDs(t *testing.T) {
 		t.Errorf("expected second request ID %q, got %q", "req-2", id2)
 	}
 }
+
+func TestRecoveryMiddlewareHandlesPanic(t *testing.T) {
+	panicHandler := func(w http.ResponseWriter, r *http.Request) {
+		panic("boom")
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rr := httptest.NewRecorder()
+
+	wrapped := recoveryMiddleware(panicHandler)
+	wrapped(rr, req)
+
+	if rr.Code != http.StatusInternalServerError {
+		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, rr.Code)
+	}
+
+	expected := `{"error":"internal server error"}`
+	if strings.TrimSpace(rr.Body.String()) != expected {
+		t.Errorf("expected body %q, got %q", expected, rr.Body.String())
+	}
+}
