@@ -32,16 +32,41 @@ request -> middleware -> handler -> response
 
 ## Build Tasks
 
-1. Create `task-http-api`.
-2. Add `GET /health`.
-3. Add in-memory `POST /tasks`.
-4. Add in-memory `GET /tasks`.
-5. Add JSON validation and useful error responses.
+1. Create `task-http-api`. - Done
+2. Add `GET /health`. - Done
+3. Add in-memory `POST /tasks`. - Done
+4. Add in-memory `GET /tasks`. - Done
+5. Add JSON validation and useful error responses. - Done for current create/list slice
 6. Add request ID middleware.
 7. Add logging middleware.
 8. Add panic recovery middleware.
 9. Add graceful shutdown.
 10. Add handler tests.
+
+## Current Progress
+
+Working now:
+
+- Go module initialized as `task-http-api`.
+- Server starts on port `8080`.
+- `GET /health` returns `ok`.
+- `POST /tasks` accepts JSON with a non-empty `title`.
+- `POST /tasks` returns `201 Created` with the created task as JSON.
+- Created tasks are stored in memory in `taskList`.
+- `GET /tasks` returns the in-memory task list as JSON.
+- Malformed JSON returns `400 Bad Request`.
+- Empty or whitespace-only titles return `400 Bad Request`.
+- Unsupported methods on `/tasks` return `405 Method Not Allowed`.
+
+Current request flow:
+
+```text
+client request -> route -> handler -> method check -> decode JSON -> validate -> create/list -> response
+```
+
+Important limitation:
+
+- Tasks are stored only in memory. Restarting the server clears the list.
 
 ## Test Tasks
 
@@ -53,21 +78,108 @@ request -> middleware -> handler -> response
 
 ## Done Checklist
 
-- [ ] Server starts locally.
-- [ ] `/health` works.
-- [ ] Tasks can be created in memory.
-- [ ] Tasks can be listed from memory.
-- [ ] Invalid JSON returns a useful error.
+- [x] Server starts locally.
+- [x] `/health` works.
+- [x] Tasks can be created in memory.
+- [x] Tasks can be listed from memory.
+- [x] Invalid JSON returns a useful error.
 - [ ] Request IDs appear in responses or logs.
 - [ ] Logs show useful request information.
 - [ ] Panic recovery returns a controlled response.
 - [ ] Graceful shutdown is implemented.
 - [ ] Handler tests pass.
-- [ ] README explains request flow and endpoints.
+- [x] README explains current request flow and endpoints.
+
+## Endpoints
+
+### `GET /health`
+
+Checks whether the server is running.
+
+Expected response:
+
+```text
+ok
+```
+
+### `POST /tasks`
+
+Creates a task in memory.
+
+Example:
+
+```bash
+curl -i -X POST http://localhost:8080/tasks -d '{"title":"learn Go HTTP"}'
+```
+
+Current response:
+
+```json
+{
+  "ID": 1,
+  "Title": "learn Go HTTP",
+  "Done": false
+}
+```
+
+### `GET /tasks`
+
+Lists the in-memory tasks as JSON.
+
+Example:
+
+```bash
+curl -i http://localhost:8080/tasks
+```
+
+Example response:
+
+```json
+[
+  {
+    "ID": 1,
+    "Title": "learn Go HTTP",
+    "Done": false
+  }
+]
+```
+
+## How To Run
+
+```bash
+go run .
+```
+
+Then test from another terminal:
+
+```bash
+curl -i http://localhost:8080/health
+curl -i -X POST http://localhost:8080/tasks -d '{"title":"learn Go HTTP"}'
+curl -i http://localhost:8080/tasks
+```
+
+## Current Manual Checks
+
+```bash
+go test ./...
+```
+
+Current result:
+
+```text
+?    task-http-api    [no test files]
+```
 
 ## What I Learned
 
-Fill this in as the stage progresses.
+- A Go backend server stays running and waits for requests.
+- A handler receives a request and writes a response.
+- `w.Write([]byte("ok"))` writes raw bytes to the response.
+- `json.NewEncoder(w).Encode(value)` converts a Go value to JSON and writes it directly to the response.
+- HTTP response order matters: set headers first, write status second, write body third.
+- `201 Created` is the right success status when `POST /tasks` creates a new task.
+- `POST /tasks` and `GET /tasks` can share the same path but do different work based on the HTTP method.
+- In-memory storage disappears when the server restarts.
 
 ## Public Post Ideas
 

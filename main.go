@@ -41,7 +41,15 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 		task := Task{Title: reqBody.Title, Done: false, ID: len(taskList) + 1}
 		taskList = append(taskList, task)
 
-		w.Write([]byte("create task"))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+
+		encodingErr := json.NewEncoder(w).Encode(task)
+
+		if encodingErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 
