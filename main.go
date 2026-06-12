@@ -24,28 +24,40 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createTaskHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	if r.Method == http.MethodPost {
+		var reqBody CreateTaskRequest
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if len(strings.TrimSpace(reqBody.Title)) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		task := Task{Title: reqBody.Title, Done: false, ID: len(taskList) + 1}
+		taskList = append(taskList, task)
+
+		w.Write([]byte("create task"))
 		return
 	}
 
-	var reqBody CreateTaskRequest
-	err := json.NewDecoder(r.Body).Decode(&reqBody)
+	if r.Method == http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
 
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		err := json.NewEncoder(w).Encode(taskList)
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 	}
 
-	if len(strings.TrimSpace(reqBody.Title)) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	task := Task{Title: reqBody.Title, Done: false, ID: len(taskList) + 1}
-	taskList = append(taskList, task)
-
-	w.Write([]byte("create task"))
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func main() {
