@@ -54,9 +54,9 @@ Working now:
 - `POST /tasks` returns `201 Created` with the created task as JSON.
 - Created tasks are stored in memory in `taskList`.
 - `GET /tasks` returns the in-memory task list as JSON.
-- Malformed JSON returns `400 Bad Request`.
-- Empty or whitespace-only titles return `400 Bad Request`.
-- Unsupported methods on `/tasks` return `405 Method Not Allowed`.
+- Malformed JSON returns `400 Bad Request` with a JSON error body.
+- Empty or whitespace-only titles return `400 Bad Request` with a JSON error body.
+- Unsupported methods on `/tasks` return `405 Method Not Allowed` with a JSON error body and `Allow: GET, POST`.
 
 Current request flow:
 
@@ -156,6 +156,8 @@ Then test from another terminal:
 curl -i http://localhost:8080/health
 curl -i -X POST http://localhost:8080/tasks -d '{"title":"learn Go HTTP"}'
 curl -i http://localhost:8080/tasks
+curl -i -X POST http://localhost:8080/tasks -d '{bad json}'
+curl -i -X DELETE http://localhost:8080/tasks
 ```
 
 ## Current Manual Checks
@@ -178,6 +180,8 @@ Current result:
 - `json.NewEncoder(w).Encode(value)` converts a Go value to JSON and writes it directly to the response.
 - HTTP response order matters: set headers first, write status second, write body third.
 - `201 Created` is the right success status when `POST /tasks` creates a new task.
+- JSON error responses are more useful than bare status codes because clients can read the reason.
+- Small helpers like `writeJSON` are useful once the same response-writing pattern appears multiple times.
 - `POST /tasks` and `GET /tasks` can share the same path but do different work based on the HTTP method.
 - In-memory storage disappears when the server restarts.
 
