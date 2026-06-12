@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -18,6 +19,7 @@ type Task struct {
 }
 
 var taskList = []Task{}
+var requestCounter = 0
 
 type CreateTaskRequest struct {
 	Title string `json:"title"`
@@ -31,7 +33,8 @@ func writeJSON(w http.ResponseWriter, status int, data any) error {
 
 func requestIDMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-Request-ID", "req-1")
+		requestCounter++
+		w.Header().Set("X-Request-ID", "req-"+strconv.Itoa(requestCounter))
 		next(w, r)
 	}
 }

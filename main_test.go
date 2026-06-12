@@ -183,8 +183,8 @@ func TestRequestIDMiddlewareAddsHeader(t *testing.T) {
 	wrapped(rr, req)
 
 	reqID := rr.Header().Get("X-Request-ID")
-	if reqID != "req-1" {
-		t.Errorf("expected X-Request-ID %q, got %q", "req-1", reqID)
+	if reqID == "" {
+		t.Error("expected X-Request-ID header to be set, got empty")
 	}
 
 	if rr.Body.String() != "ok" {
