@@ -8,19 +8,19 @@ import (
 )
 
 type ErrorResponse struct {
-	Error string
+	Error string `json:"error"`
 }
 
 type Task struct {
-	ID    int
-	Title string
-	Done  bool
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+	Done  bool   `json:"done"`
 }
 
 var taskList = []Task{}
 
 type CreateTaskRequest struct {
-	Title string
+	Title string `json:"title"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) error {

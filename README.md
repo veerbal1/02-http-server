@@ -116,9 +116,9 @@ Current response:
 
 ```json
 {
-  "ID": 1,
-  "Title": "learn Go HTTP",
-  "Done": false
+  "id": 1,
+  "title": "learn Go HTTP",
+  "done": false
 }
 ```
 
@@ -137,9 +137,9 @@ Example response:
 ```json
 [
   {
-    "ID": 1,
-    "Title": "learn Go HTTP",
-    "Done": false
+    "id": 1,
+    "title": "learn Go HTTP",
+    "done": false
   }
 ]
 ```
@@ -181,6 +181,7 @@ Current result:
 - HTTP response order matters: set headers first, write status second, write body third.
 - `201 Created` is the right success status when `POST /tasks` creates a new task.
 - JSON error responses are more useful than bare status codes because clients can read the reason.
+- JSON tags let Go keep exported field names like `Title` while the public API uses names like `title`.
 - Small helpers like `writeJSON` are useful once the same response-writing pattern appears multiple times.
 - `POST /tasks` and `GET /tasks` can share the same path but do different work based on the HTTP method.
 - In-memory storage disappears when the server restarts.
