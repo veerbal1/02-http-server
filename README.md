@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation complete. Final completion review is pending the explain-back checkpoint.
+Complete. Final explain-back checkpoint passed.
 
 ## Goal
 
@@ -73,7 +73,7 @@ Completion review:
 - Automated tests pass.
 - Manual curl checklist passed.
 - README documents current behavior.
-- Remaining checkpoint: explain the request flow, middleware chain, testing approach, in-memory limitation, and graceful shutdown in your own words.
+- Explain-back checkpoint passed: request flow, middleware chain, testing approach, in-memory limitation, and graceful shutdown were explained in the user's own words.
 
 Current request flow:
 
@@ -107,7 +107,7 @@ Important limitation:
 - [x] Graceful shutdown is implemented.
 - [x] Handler tests pass.
 - [x] README explains current request flow and endpoints.
-- [ ] User can explain the project flow in their own words.
+- [x] User can explain the project flow in their own words.
 
 ## Endpoints
 
