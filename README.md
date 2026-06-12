@@ -37,8 +37,8 @@ request -> middleware -> handler -> response
 3. Add in-memory `POST /tasks`. - Done
 4. Add in-memory `GET /tasks`. - Done
 5. Add JSON validation and useful error responses. - Done for current create/list slice
-6. Add request ID middleware.
-7. Add logging middleware.
+6. Add request ID middleware. - Done
+7. Add logging middleware. - Done
 8. Add panic recovery middleware.
 9. Add graceful shutdown.
 10. Add handler tests.
@@ -57,11 +57,15 @@ Working now:
 - Malformed JSON returns `400 Bad Request` with a JSON error body.
 - Empty or whitespace-only titles return `400 Bad Request` with a JSON error body.
 - Unsupported methods on `/tasks` return `405 Method Not Allowed` with a JSON error body and `Allow: GET, POST`.
+- `GET /health` and `/tasks` responses include `X-Request-ID`.
+- Request IDs are generated as `req-<number>` and protected with a mutex.
+- Requests are logged with request ID, method, path, and duration.
+- In-memory task creation and listing are protected with a mutex and list snapshot.
 
 Current request flow:
 
 ```text
-client request -> route -> handler -> method check -> decode JSON -> validate -> create/list -> response
+client request -> request ID middleware -> logging middleware -> route handler -> method check -> decode JSON -> validate -> create/list -> response
 ```
 
 Important limitation:
@@ -84,8 +88,8 @@ Important limitation:
 - [x] Tasks can be created in memory.
 - [x] Tasks can be listed from memory.
 - [x] Invalid JSON returns a useful error.
-- [ ] Request IDs appear in responses or logs.
-- [ ] Logs show useful request information.
+- [x] Request IDs appear in responses.
+- [x] Logs show useful request information.
 - [ ] Panic recovery returns a controlled response.
 - [ ] Graceful shutdown is implemented.
 - [x] Handler tests pass.
@@ -183,6 +187,8 @@ Automated tests:
 - `TestListTasksHandlerEmpty` checks an empty in-memory list returns `[]`.
 - `TestListTasksHandlerWithTasks` checks populated in-memory tasks are returned.
 - `TestTasksHandlerMethodNotAllowed` checks unsupported methods return `405`, `Allow: GET, POST`, and JSON error.
+- `TestRequestIDMiddlewareAddsHeader` checks middleware adds `X-Request-ID` and still calls the wrapped handler.
+- `TestRequestIDMiddlewareGeneratesDifferentIDs` checks sequential requests receive `req-1` and `req-2`.
 
 Manual curl checklist passed:
 
@@ -209,6 +215,10 @@ Manual curl checklist passed:
 - Small helpers like `writeJSON` are useful once the same response-writing pattern appears multiple times.
 - `POST /tasks` and `GET /tasks` can share the same path but do different work based on the HTTP method.
 - `httptest` can call handlers directly without starting the real server on port `8080`.
+- Middleware wraps handlers so shared behavior like request IDs can be applied without repeating code in every handler.
+- A mutex protects shared data so one request updates a shared counter or task list at a time.
+- For `GET /tasks`, copying the slice under lock gives the response a stable snapshot before JSON encoding.
+- Logging middleware measures duration around the handler and logs `request_id`, method, path, and duration.
 - In-memory storage disappears when the server restarts.
 
 ## Public Post Ideas

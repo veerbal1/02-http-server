@@ -191,3 +191,27 @@ func TestRequestIDMiddlewareAddsHeader(t *testing.T) {
 		t.Errorf("expected body %q, got %q", "ok", rr.Body.String())
 	}
 }
+
+func TestRequestIDMiddlewareGeneratesDifferentIDs(t *testing.T) {
+	requestCounter = 0
+
+	wrapped := requestIDMiddleware(healthHandler)
+
+	req1 := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rr1 := httptest.NewRecorder()
+	wrapped(rr1, req1)
+
+	req2 := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rr2 := httptest.NewRecorder()
+	wrapped(rr2, req2)
+
+	id1 := rr1.Header().Get("X-Request-ID")
+	id2 := rr2.Header().Get("X-Request-ID")
+
+	if id1 != "req-1" {
+		t.Errorf("expected first request ID %q, got %q", "req-1", id1)
+	}
+	if id2 != "req-2" {
+		t.Errorf("expected second request ID %q, got %q", "req-2", id2)
+	}
+}

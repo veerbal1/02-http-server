@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 type ErrorResponse struct {
@@ -19,7 +21,9 @@ type Task struct {
 }
 
 var taskList = []Task{}
+var taskListMu sync.Mutex
 var requestCounter = 0
+var requestCounterMu sync.Mutex
 
 type CreateTaskRequest struct {
 	Title string `json:"title"`
@@ -33,9 +37,23 @@ func writeJSON(w http.ResponseWriter, status int, data any) error {
 
 func requestIDMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		requestCounterMu.Lock()
 		requestCounter++
-		w.Header().Set("X-Request-ID", "req-"+strconv.Itoa(requestCounter))
+		requestID := "req-" + strconv.Itoa(requestCounter)
+		requestCounterMu.Unlock()
+
+		w.Header().Set("X-Request-ID", requestID)
 		next(w, r)
+	}
+}
+
+func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next(w, r)
+		duration := time.Since(start)
+		requestID := w.Header().Get("X-Request-ID")
+		fmt.Printf("request_id=%s method=%s path=%s duration=%s\n", requestID, r.Method, r.URL.Path, duration)
 	}
 }
 
@@ -66,8 +84,10 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		taskListMu.Lock()
 		task := Task{Title: reqBody.Title, Done: false, ID: len(taskList) + 1}
 		taskList = append(taskList, task)
+		taskListMu.Unlock()
 
 		writeErr := writeJSON(w, http.StatusCreated, task)
 		if writeErr != nil {
@@ -77,7 +97,12 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-		writeErr := writeJSON(w, http.StatusOK, taskList)
+		taskListMu.Lock()
+		tasks := make([]Task, 0, len(taskList))
+		tasks = append(tasks, taskList...)
+		taskListMu.Unlock()
+
+		writeErr := writeJSON(w, http.StatusOK, tasks)
 		if writeErr != nil {
 			return
 		}
@@ -89,8 +114,8 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/health", requestIDMiddleware(healthHandler))
-	http.HandleFunc("/tasks", requestIDMiddleware(createTaskHandler))
+	http.HandleFunc("/health", requestIDMiddleware(loggingMiddleware(healthHandler)))
+	http.HandleFunc("/tasks", requestIDMiddleware(loggingMiddleware(createTaskHandler)))
 
 	err := http.ListenAndServe(":8080", nil)
 
