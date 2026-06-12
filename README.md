@@ -172,6 +172,18 @@ Current result:
 ?    task-http-api    [no test files]
 ```
 
+Manual curl checklist passed:
+
+| Test | Expected Result | Status |
+| --- | --- | --- |
+| `GET /health` | `200 OK` with `ok` | Passed |
+| `GET /tasks` | `200 OK` with JSON task list | Passed |
+| malformed JSON | `400 Bad Request` with JSON error | Passed |
+| empty title | `400 Bad Request` with JSON error | Passed |
+| `POST /tasks` | `201 Created` with created task JSON | Passed |
+| list after create | task list contains created tasks | Passed |
+| unsupported method | `405 Method Not Allowed`, `Allow: GET, POST`, JSON error | Passed |
+
 ## What I Learned
 
 - A Go backend server stays running and waits for requests.
