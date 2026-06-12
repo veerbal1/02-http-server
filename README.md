@@ -71,9 +71,10 @@ Important limitation:
 ## Test Tasks
 
 - Verify `/health` returns success.
-- Test task creation.
-- Test task listing.
-- Test invalid JSON.
+- Test `/health` with `httptest`. - Done
+- Test task creation. - Done
+- Test task listing. - Done
+- Test invalid JSON. - Done
 - Test important middleware behavior where practical.
 
 ## Done Checklist
@@ -87,7 +88,7 @@ Important limitation:
 - [ ] Logs show useful request information.
 - [ ] Panic recovery returns a controlled response.
 - [ ] Graceful shutdown is implemented.
-- [ ] Handler tests pass.
+- [x] Handler tests pass.
 - [x] README explains current request flow and endpoints.
 
 ## Endpoints
@@ -169,8 +170,19 @@ go test ./...
 Current result:
 
 ```text
-?    task-http-api    [no test files]
+ok   task-http-api
 ```
+
+Automated tests:
+
+- `TestHealthHandler` checks `GET /health` returns `200 OK` and body `ok`.
+- `TestCreateTaskHandlerBadJSON` checks malformed JSON returns `400`.
+- `TestCreateTaskHandlerEmptyTitle` checks empty title returns `400`.
+- `TestCreateTaskHandlerWhitespaceTitle` checks whitespace-only title returns `400`.
+- `TestCreateTaskHandlerCreatesTask` checks successful task creation returns `201` and task JSON.
+- `TestListTasksHandlerEmpty` checks an empty in-memory list returns `[]`.
+- `TestListTasksHandlerWithTasks` checks populated in-memory tasks are returned.
+- `TestTasksHandlerMethodNotAllowed` checks unsupported methods return `405`, `Allow: GET, POST`, and JSON error.
 
 Manual curl checklist passed:
 
@@ -196,6 +208,7 @@ Manual curl checklist passed:
 - JSON tags let Go keep exported field names like `Title` while the public API uses names like `title`.
 - Small helpers like `writeJSON` are useful once the same response-writing pattern appears multiple times.
 - `POST /tasks` and `GET /tasks` can share the same path but do different work based on the HTTP method.
+- `httptest` can call handlers directly without starting the real server on port `8080`.
 - In-memory storage disappears when the server restarts.
 
 ## Public Post Ideas
